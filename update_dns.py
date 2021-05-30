@@ -46,7 +46,7 @@ def del_dns_record(domain, dns_ip, api_key, protocol='ip'):
 def add_dns_record(domain: str, new_ip_address: str, api_key: str, protocol='ip'):
     address = new_ip_address
     rec_type = "AAAA" if protocol == "ipv6" else "A"
-    logging.debug('Our current %s address is: %s', protocol, address)
+    logging.debug('Our new %s address is: %s', protocol, address)
     command = "dns-add_record&record=" + domain + "&type=" + rec_type + "&value=" + address
     response = speak_to_dreamhost(command, api_key)
     if response.get('result') == 'error':
