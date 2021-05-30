@@ -20,59 +20,46 @@ logging.basicConfig(level=logging.INFO)
 # Set this to 1 if you want to update IPv6 record.
 CHECK_IP_V6 = 0
 
-IP_Addr = ""
-IPv6_Addr = ""
-DNS_IP = ""
-DNS_IPV6 = ""
-current_records = ""
-
 
 def rand_uuid():
     return str(uuid.uuid4())
 
 
 def get_dns_records(api_key):
-    records = json.loads(speak_to_dreamhost("dns-list_records", api_key))
-    logging.debug(f"All relevant DNS Records for {records}")
-    return records
+    return speak_to_dreamhost("dns-list_records", api_key)
 
 
 def del_dns_record(domain, dns_ip, api_key, protocol='ip'):
     current_ip = dns_ip
-    if protocol == 'ipv6':
-        rec_type = 'AAAA'
-        print(current_ip)
-        print(DNS_IPV6)
-    else:
-        rec_type = 'A'
-        print(current_ip)
-        print(DNS_IP)
-    logging.info('The current %s IP is: %s', protocol, current_ip)
+    rec_type = 'AAAA' if protocol == 'ipv6' else 'A'
+    logging.debug('The current %s IP is: %s', protocol, current_ip)
     if current_ip == '':
         logging.error("Can't delete IP, value passed is empty")
         sys.exit("Weird")
     command = "dns-remove_record&record=" + domain + "&type=" + rec_type + "&value=" + current_ip
-    response = json.loads(speak_to_dreamhost(command, api_key))
+    response = speak_to_dreamhost(command, api_key)
     if response.get('result') == 'error':
         logging.error('Error while deleting %s record: \n %s', protocol, response)
     logging.debug('Tried to del %s record and here is what Dreamhost responded: \n %s', protocol, response)
 
 
-def add_dns_record(domain: str, dns_ip: str, api_key: str, protocol='ip'):
-    address = dns_ip
+def add_dns_record(domain: str, new_ip_address: str, api_key: str, protocol='ip'):
+    address = new_ip_address
     rec_type = "AAAA" if protocol == "ipv6" else "A"
-    logging.info('Our current %s address is: %s', protocol, address)
+    logging.debug('Our current %s address is: %s', protocol, address)
     command = "dns-add_record&record=" + domain + "&type=" + rec_type + "&value=" + address
-    response = json.loads(speak_to_dreamhost(command, api_key))
+    response = speak_to_dreamhost(command, api_key)
     if response.get('result') == 'error':
         logging.error('Error while adding %s record: \n %s', protocol, response)
+    elif response.get('result') == 'success':
+        logging.info("Record supposedly updated")
     logging.debug('Tried to add %s record and Dreamhost responded with: \n %s', protocol, response)
 
 
-def update_dns_record(domain: str, dns_ip: str, api_key, protocol='ip'):
+def update_dns_record(domain: str, dns_ip: str, new_ip_address: str, api_key, protocol='ip'):
     if dns_ip:
         del_dns_record(domain, dns_ip, api_key, protocol)
-    add_dns_record(domain, dns_ip, api_key, protocol)
+    add_dns_record(domain, new_ip_address, api_key, protocol)
 
 
 def make_url_string(command, api_key):
@@ -85,8 +72,8 @@ def speak_to_dreamhost(command, api_key):
     api_url = "api.dreamhost.com"
     logging.debug('Will try to speak to Dreamhost, here is what I will tell: %s', command)
     substring = make_url_string(command, api_key)
-    result = requests.get(f"https://{api_url}/{substring}")
-    logging.debug('Here is what Dreamhost responded: %s', result.json())
+    result = requests.get(f"https://{api_url}{substring}")
+    logging.debug(f"Here is what Dreamhost responded: {result.json()}")
     return result.json()
 
 
@@ -106,8 +93,6 @@ def clean_html(raw_html):
 
 
 def make_it_so(api_key: str, domains: str):
-    global DNS_IPV6
-    global IPv6_Addr
     if api_key == '' or domains is False:
         msg = 'API_Key and/or domain empty. Edit settings.json and try again.'
         syslog.syslog(syslog.LOG_ERR, msg)
@@ -124,13 +109,14 @@ def make_it_so(api_key: str, domains: str):
         logging.debug('new_ip_address: %s', new_ip_address)
         if dns_ip != new_ip_address:
             logging.info('Address different, will try to update.')
-            update_dns_record(domain, dns_ip, api_key)
+            logging.info(f"{domain} should go from {dns_ip} to {new_ip_address}")
+            update_dns_record(domain, dns_ip, api_key, new_ip_address)
         else:
             logging.info('IP Record up-to-date.')
         if CHECK_IP_V6 == 1:
             new_ip_address = get_host_ip_address('ipv6')
             if dns_ip != new_ip_address:
-                update_dns_record(domain, dns_ip, api_key, 'ipv6')
+                update_dns_record(domain, dns_ip, api_key, new_ip_address, 'ipv6')
             else:
                 logging.info('IPv6 Record up-to-date.')
 
