@@ -110,13 +110,13 @@ def make_it_so(api_key: str, domains: str):
         if dns_ip != new_ip_address:
             logging.info('Address different, will try to update.')
             logging.info(f"{domain} should go from {dns_ip} to {new_ip_address}")
-            update_dns_record(domain, dns_ip, api_key, new_ip_address)
+            update_dns_record(domain, dns_ip, new_ip_address, api_key)
         else:
             logging.info('IP Record up-to-date.')
         if CHECK_IP_V6 == 1:
             new_ip_address = get_host_ip_address('ipv6')
             if dns_ip != new_ip_address:
-                update_dns_record(domain, dns_ip, api_key, new_ip_address, 'ipv6')
+                update_dns_record(domain, dns_ip, new_ip_address, api_key, 'ipv6')
             else:
                 logging.info('IPv6 Record up-to-date.')
 
