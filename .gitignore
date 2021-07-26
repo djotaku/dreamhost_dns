@@ -140,3 +140,4 @@ cython_debug/
 # specific to this project
 /settings.json
 /.idea
+/dreamhost_dns_log.txt

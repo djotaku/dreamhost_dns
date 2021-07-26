@@ -14,10 +14,17 @@ import sys
 import uuid
 import logging
 
-logging.basicConfig(format='%(asctime)s - %(levelname)s - %(message)s', level=logging.INFO)
 dreamhost_log = logging.getLogger("Dreamhost_DNS")
-dreamhost_log.addHandler(logging.StreamHandler())
-dreamhost_log.addHandler(logging.FileHandler("dreamhost_dns_log.txt"))
+dreamhost_log.setLevel(logging.DEBUG)
+stream_handler = logging.StreamHandler(stream=sys.stdout)
+stream_handler.setLevel(logging.INFO)
+stream_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+dreamhost_log.addHandler(stream_handler)
+file_handler = logging.FileHandler("dreamhost_dns_log.txt")
+file_handler.setLevel(logging.DEBUG)
+file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
+dreamhost_log.addHandler(file_handler)
+
 
 # Set this to 1 if you want to update IPv6 record.
 CHECK_IP_V6 = 0
@@ -56,12 +63,15 @@ def add_dns_record(domain: str, new_ip_address: str, api_key: str, protocol='ip'
     elif response.get('result') == 'success':
         dreamhost_log.info("Record supposedly updated")
     dreamhost_log.debug(f'Tried to add {protocol} record for {domain} and Dreamhost responded with: \n{response}')
+    return response.get('result')
 
 
 def update_dns_record(domain: str, dns_ip: str, new_ip_address: str, api_key, protocol='ip'):
-    if dns_ip:
+    """Add the new DNS record and remove the old one."""
+    add_dns_record_result = add_dns_record(domain, new_ip_address, api_key, protocol)
+    if dns_ip and add_dns_record_result == "success":
         del_dns_record(domain, dns_ip, api_key, protocol)
-    add_dns_record(domain, new_ip_address, api_key, protocol)
+
 
 
 def make_url_string(command, api_key):
@@ -106,9 +116,9 @@ def make_it_so(api_key: str, domains: str):
     for domain_to_update in domain_dns_ip_pairs:
         dns_ip = domain_to_update[1]
         domain = domain_to_update[0]
-        dreamhost_log.debug(f'{dns_ip=}')
+        dreamhost_log.debug(f'Current IP = {dns_ip}')
         new_ip_address = get_host_ip_address()
-        dreamhost_log.debug('new_ip_address: %s', new_ip_address)
+        dreamhost_log.debug(f'new_ip_address: {new_ip_address}')
         if dns_ip != new_ip_address:
             logging.info('Address different, will try to update.')
             logging.info(f"{domain} should go from {dns_ip} to {new_ip_address}")
@@ -121,6 +131,9 @@ def make_it_so(api_key: str, domains: str):
                 update_dns_record(domain, dns_ip, new_ip_address, api_key, 'ipv6')
             else:
                 dreamhost_log.info(f'IPv6 Record for {domain} is up-to-date.')
+    # perhaps you have some new domains or something happened to delete the ones you care about
+    # if domain in domains and not in domain_dns_ip_pairs:
+    # add them in
 
 
 def gather_information():
