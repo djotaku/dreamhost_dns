@@ -73,7 +73,6 @@ def update_dns_record(domain: str, dns_ip: str, new_ip_address: str, api_key, pr
         del_dns_record(domain, dns_ip, api_key, protocol)
 
 
-
 def make_url_string(command, api_key):
     """"str->str"""
     return "/?key=" + api_key + "&cmd=" + command + "&unique_id=" + rand_uuid() + "&format=json"
@@ -113,11 +112,11 @@ def make_it_so(api_key: str, domains: str):
     domain_dns_ip_pairs = [(record.get("record"), record.get("value"))
                            for record in current_dns_records.get('data')
                            if record.get("record") in domains]
+    new_ip_address = get_host_ip_address()
     for domain_to_update in domain_dns_ip_pairs:
         dns_ip = domain_to_update[1]
         domain = domain_to_update[0]
         dreamhost_log.debug(f'Current IP = {dns_ip}')
-        new_ip_address = get_host_ip_address()
         dreamhost_log.debug(f'new_ip_address: {new_ip_address}')
         if dns_ip != new_ip_address:
             logging.info('Address different, will try to update.')
@@ -132,8 +131,10 @@ def make_it_so(api_key: str, domains: str):
             else:
                 dreamhost_log.info(f'IPv6 Record for {domain} is up-to-date.')
     # perhaps you have some new domains or something happened to delete the ones you care about
-    # if domain in domains and not in domain_dns_ip_pairs:
-    # add them in
+    updated_domains = [domain[0] for domain in domain_dns_ip_pairs]
+    new_dns_to_add = [domain for domain in domains if domain not in updated_domains]
+    for new_domain in new_dns_to_add:
+        add_dns_record(new_domain, new_ip_address, api_key)
 
 
 def gather_information():
