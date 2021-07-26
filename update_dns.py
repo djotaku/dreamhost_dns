@@ -48,8 +48,8 @@ def del_dns_record(domain, dns_ip, api_key, protocol='ip'):
     command = "dns-remove_record&record=" + domain + "&type=" + rec_type + "&value=" + current_ip
     response = speak_to_dreamhost(command, api_key)
     if response.get('result') == 'error':
-        dreamhost_log.error('Error while deleting %s record: \n %s', protocol, response)
-    dreamhost_log.debug(f'Tried to del {protocol} record for {domain} and Dreamhost responded: \n {response}')
+        dreamhost_log.error(f'Error while deleting {protocol} record for {domain}: {response}')
+    dreamhost_log.debug(f'Tried to del {protocol} record for {domain} and Dreamhost responded: {response}')
 
 
 def add_dns_record(domain: str, new_ip_address: str, api_key: str, protocol='ip'):
@@ -61,8 +61,8 @@ def add_dns_record(domain: str, new_ip_address: str, api_key: str, protocol='ip'
     if response.get('result') == 'error':
         dreamhost_log.error(f'Error while adding {protocol} record for {domain}: \n {response=}')
     elif response.get('result') == 'success':
-        dreamhost_log.info("Record supposedly updated")
-    dreamhost_log.debug(f'Tried to add {protocol} record for {domain} and Dreamhost responded with: \n{response}')
+        dreamhost_log.info(f"Record for {domain} was updated with {new_ip_address=}")
+    dreamhost_log.debug(f'Tried to add {protocol} record for {domain} and Dreamhost responded with: {response}')
     return response.get('result')
 
 
