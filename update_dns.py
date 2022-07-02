@@ -28,7 +28,8 @@ dreamhost_log.addHandler(file_handler)
 CHECK_IP_V6 = 0
 
 
-def rand_uuid():
+def rand_uuid() -> str:
+    """Generate and return a random UUID."""
     return str(uuid.uuid4())
 
 
@@ -163,6 +164,18 @@ def clean_html(raw_html: str):
     return re.sub(clean, '', raw_html)
 
 
+def validate_ip_address(ip_address: str) -> bool:
+    """Make sure a valid IP address was returned from the get_host_ip_address function.
+
+    ip_address: the string to check if it's actually an IP address.
+    """
+    valid_ip = re.compile(r'\d+.\d+.\d+.\d+')
+    if re.match(valid_ip, ip_address):
+        return True
+    else:
+        return False
+
+
 def make_it_so(api_key: str, domains: list[str]):
     """Run through the list of domains and update the IP address.
 
@@ -178,6 +191,8 @@ def make_it_so(api_key: str, domains: list[str]):
                            for record in current_dns_records.get('data')
                            if record.get("record") in domains]
     new_ip_address = get_host_ip_address()
+    if not validate_ip_address(new_ip_address):
+        sys.exit("Did not obtain valid IP address.")
     for domain_to_update in domain_dns_ip_pairs:
         dns_ip = domain_to_update[1]
         domain = domain_to_update[0]
