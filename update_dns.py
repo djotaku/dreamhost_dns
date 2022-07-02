@@ -6,7 +6,6 @@
 
     """
 
-
 import json
 import re
 import requests
@@ -24,7 +23,6 @@ file_handler = logging.FileHandler("dreamhost_dns_log.txt")
 file_handler.setLevel(logging.DEBUG)
 file_handler.setFormatter(logging.Formatter('%(asctime)s - %(levelname)s - %(message)s'))
 dreamhost_log.addHandler(file_handler)
-
 
 # Set this to 1 if you want to update IPv6 record.
 CHECK_IP_V6 = 0
@@ -88,14 +86,24 @@ def speak_to_dreamhost(command, api_key):
     return result.json()
 
 
+# def get_host_ip_address(protocol='ip'):
+#    if protocol == 'ipv6':
+#        ip_address = requests.get('http://checkipv6.dyndns.com')
+#    else:
+#        ip_address = requests.get('http://checkip.dyndns.com')
+#    body = clean_html(ip_address.text)
+#    ip_addr_list = body.rsplit()
+#    return ip_addr_list[-1]
+
 def get_host_ip_address(protocol='ip'):
     if protocol == 'ipv6':
         ip_address = requests.get('http://checkipv6.dyndns.com')
+        body = clean_html(ip_address.text)
+        ip_addr_list = body.rsplit()
+        return ip_addr_list[-1]
     else:
-        ip_address = requests.get('http://checkip.dyndns.com')
-    body = clean_html(ip_address.text)
-    ip_addr_list = body.rsplit()
-    return ip_addr_list[-1]
+        ip_address = requests.get('https://api.ipify.org')
+        return ip_address.text
 
 
 def clean_html(raw_html):
